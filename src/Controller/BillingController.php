@@ -12,7 +12,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use JMS\Serializer\SerializerBuilder;
-use App\ODT\BillingUserFormModel;
+use App\DTO\BillingUserFormModel;
 use Swagger\Annotations as SWG;
 use App\Entity\BillingUser;
 
