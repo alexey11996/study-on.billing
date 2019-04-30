@@ -2,16 +2,11 @@
 
 namespace App\DTO;
 
-use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 use JMS\Serializer\Annotation as JMS;
 use App\Validator\UniqueUser;
 
-/**
- * @ORM\Entity
- * @ORM\Table(name="billing_user")
- */
 class BillingUserFormModel
 {
     /**
