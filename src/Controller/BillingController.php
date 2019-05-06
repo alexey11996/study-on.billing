@@ -57,8 +57,33 @@ class BillingController extends AbstractController
     *          )
     *     ),
     *     @SWG\Response(
+    *          response=400,
+    *          description="Bad request",
+    *          @SWG\Schema(
+    *              @SWG\Property(
+    *                  property="message",
+    *                  type="array",
+    *                  @SWG\Items(type="string")
+    *              )
+    *          )
+    *     ),
+    *     @SWG\Response(
     *          response=401,
-    *          description="Bad creditionals",
+    *          description="Bad credentionals",
+    *          @SWG\Schema(
+    *              @SWG\Property(
+    *                  property="code",
+    *                  type="integer"
+    *              ),
+    *              @SWG\Property(
+    *                  property="message",
+    *                  type="string"
+    *              )
+    *          )
+    *     ),
+    *     @SWG\Response(
+    *          response=404,
+    *          description="Page not found",
     *          @SWG\Schema(
     *              @SWG\Property(
     *                  property="code",
@@ -122,6 +147,34 @@ class BillingController extends AbstractController
     *                  property="errors",
     *                  type="array",
     *                  @SWG\Items(type="string")
+    *              )
+    *          )
+    *     ),
+    *     @SWG\Response(
+    *          response=500,
+    *          description="Invalid JSON",
+    *          @SWG\Schema(
+    *              @SWG\Property(
+    *                  property="code",
+    *                  type="integer"
+    *              ),
+    *              @SWG\Property(
+    *                  property="message",
+    *                  type="string"
+    *              )
+    *          )
+    *     ),
+    *     @SWG\Response(
+    *          response=404,
+    *          description="Page not found",
+    *          @SWG\Schema(
+    *              @SWG\Property(
+    *                  property="code",
+    *                  type="integer"
+    *              ),
+    *              @SWG\Property(
+    *                  property="message",
+    *                  type="string"
     *              )
     *          )
     *     )
