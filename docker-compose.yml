@@ -26,7 +26,7 @@ services:
     working_dir: /app
     volumes:
       - ${PWD}:/app
-      - ${HOME}/.composer:/root/.composer
+      - /home/mint96/.composer:/.composer
     environment:
       - COMPOSER_ALLOW_SUPERUSER=1
     links:

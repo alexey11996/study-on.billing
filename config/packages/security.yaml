@@ -23,28 +23,49 @@ security:
       pattern: ^/api/v1/register
       stateless: true
       anonymous: true
+    course_pay:
+      pattern: ^/api/v1/courses/(.+)/pay
+      stateless: true
+      anonymous: false
+      guard:
+        authenticators:
+          - lexik_jwt_authentication.jwt_token_authenticator
+    courses:
+      pattern: ^/api/v1/courses
+      stateless: true
+      anonymous: true
+    refresh:
+      pattern: ^/api/v1/token/refresh
+      stateless: true
+      anonymous: true
     doc:
       pattern: ^/api/v1/doc
       stateless: true
       anonymous: true
-    api:
-      pattern: ^/api
+    current_user:
+      pattern: ^/api/v1/users/current
       stateless: true
+      anonymous: false
+      guard:
+        authenticators:
+          - lexik_jwt_authentication.jwt_token_authenticator
+    transactions:
+      pattern: ^/api/v1/transactions
+      stateless: true
+      anonymous: false
       guard:
         authenticators:
           - lexik_jwt_authentication.jwt_token_authenticator
     dev:
       pattern: ^/(_(profiler|wdt)|css|images|js)/
       security: false
-      # activate different ways to authenticate
-      # http_basic: true
-      # https://symfony.com/doc/current/security.html#a-configuring-how-your-users-will-authenticate
-      # form_login: true
-      # https://symfony.com/doc/current/security/form_login_setup.html
 
-  # Easy way to control access for large sections of your site
-  # Note: Only the *first* access control that matches will be used
   access_control:
     - { path: ^/api/login, roles: IS_AUTHENTICATED_ANONYMOUSLY }
     - { path: ^/api/register, roles: IS_AUTHENTICATED_ANONYMOUSLY }
-    - { path: ^/api/doc, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+    - { path: ^/api/refresh, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+    - { path: ^/api/doc, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/api/current_user, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/api/course_pay, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/api/transactions, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/api/courses, roles: IS_AUTHENTICATED_ANONYMOUSLY }

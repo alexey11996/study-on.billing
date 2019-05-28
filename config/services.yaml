@@ -49,3 +49,15 @@ services:
     public: true
     arguments:
       $debug: "%kernel.debug%"
+
+  Gesdinet\JWTRefreshTokenBundle\Service\RefreshToken:
+    alias: "gesdinet.jwtrefreshtoken"
+
+  Gesdinet\JWTRefreshTokenBundle\Model\RefreshTokenManagerInterface:
+    alias: "gesdinet.jwtrefreshtoken.refresh_token_manager"
+
+  App\Service\PaymentService:
+    public: true
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+      $initPayment: "%env(INIT_PAYMENT)%"

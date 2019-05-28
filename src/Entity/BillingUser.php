@@ -33,6 +33,11 @@ class BillingUser implements UserInterface
      */
     private $password;
 
+    /**
+     * @ORM\Column(type="float")
+     */
+    private $balance;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -94,6 +99,18 @@ class BillingUser implements UserInterface
         return $this;
     }
 
+    public function getBalance(): ?float
+    {
+        return $this->balance;
+    }
+
+    public function setBalance(float $balance): self
+    {
+        $this->balance = $balance;
+
+        return $this;
+    }
+
     /**
      * @see UserInterface
      */
@@ -116,6 +133,7 @@ class BillingUser implements UserInterface
         $billingUser = new BillingUser();
         $billingUser->setEmail($userDto->email);
         $billingUser->setRoles(['ROLE_USER']);
+        $billingUser->setBalance(0);
         $billingUser->setPassword($passwordEncoder->encodePassword($billingUser, $userDto->password));
         return $billingUser;
     }
