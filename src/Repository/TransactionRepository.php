@@ -42,42 +42,33 @@ class TransactionRepository extends ServiceEntityRepository
             $tempArray = [];
             if (isset($skipExpired) && $skipExpired == true) {
                 if (($transaction->getExpireAt()) > (new \DateTime())) {
-                    $tempArray['id'] = $transaction->getId();
-                    $tempArray['created_at'] = $transaction->getCreatedAt();
-                    switch ($transaction->getType()) {
-                        case PAYMENT:
-                            $tempArray['type'] = "payment";
-                            break;
-                        case DEPOSIT:
-                            $tempArray['type'] = 'deposit';
-                            break;
-                    }
-                    if ($transaction->getCourse() != null) {
-                        $tempArray['course_code'] = ($transaction->getCourse())->getCode();
-                    }
-                    $tempArray['amount'] = $transaction->getValue();
-                    array_push($finalTransactions, $tempArray);
+                    $this->pushTransactions($transaction, $tempArray, $finalTransactions);
                 }
             } else {
-                $tempArray['id'] = $transaction->getId();
-                $tempArray['created_at'] = $transaction->getCreatedAt();
-                switch ($transaction->getType()) {
-                    case PAYMENT:
-                        $tempArray['type'] = "payment";
-                        break;
-                    case DEPOSIT:
-                        $tempArray['type'] = 'deposit';
-                        break;
-                }
-                if ($transaction->getCourse() != null) {
-                    $tempArray['course_code'] = ($transaction->getCourse())->getCode();
-                }
-                $tempArray['amount'] = $transaction->getValue();
-                array_push($finalTransactions, $tempArray);
+                $this->pushTransactions($transaction, $tempArray, $finalTransactions);
             }
         }
  
         return $serializer->serialize($finalTransactions, 'json');
+    }
+
+    public function pushTransactions($transaction, $tempArray, $finalTransactions)
+    {
+        $tempArray['id'] = $transaction->getId();
+        $tempArray['created_at'] = $transaction->getCreatedAt();
+        switch ($transaction->getType()) {
+            case PAYMENT:
+                $tempArray['type'] = "payment";
+                break;
+            case DEPOSIT:
+                $tempArray['type'] = 'deposit';
+                break;
+        }
+        if ($transaction->getCourse() != null) {
+            $tempArray['course_code'] = ($transaction->getCourse())->getCode();
+        }
+        $tempArray['amount'] = $transaction->getValue();
+        array_push($finalTransactions, $tempArray);
     }
 
     public function addTransaction($userId, $courseCode, $amount, $type)
