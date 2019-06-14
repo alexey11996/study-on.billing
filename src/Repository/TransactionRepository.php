@@ -10,6 +10,13 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use JMS\Serializer\SerializerBuilder;
 
+define('PAYMENT', 0);
+define('DEPOSIT', 1);
+
+define('RENT', 0);
+define('BUY', 1);
+define('FREE', 2);
+
 /**
  * @method Transaction|null find($id, $lockMode = null, $lockVersion = null)
  * @method Transaction|null findOneBy(array $criteria, array $orderBy = null)
@@ -23,117 +30,54 @@ class TransactionRepository extends ServiceEntityRepository
         parent::__construct($registry, Transaction::class);
     }
 
-    public function findAllTransactions($type, $courseCode, $skipExpired)
+    public function findAllTransactions($parameters, $skipExpired)
     {
+        $finalTransactions = [];
+
         $serializer = SerializerBuilder::create()->build();
         
-        $transactions = $this->createQueryBuilder('t')
-        ->select('t.id', 't.expireAt', 't.expireAt as created_at', 't.type', 't.course', 't.value')
-        ->getQuery()
-        ->getResult();
+        $transactions = $this->findBy($parameters);
 
-        if (!$transactions) {
-            return json_encode(['message' => 'No transactions found']);
-        } else {
-            for ($i = 0; $i < count($transactions); $i++) {
-                if ($transactions[$i]['type'] == 0) {
-                    $transactions[$i]['type'] = "payment";
-                } elseif ($transactions[$i]['type'] == 1) {
-                    $transactions[$i]['type'] = 'deposit';
-                    unset($transactions[$i]['course']);
-                }
-                $transactions[$i]['created_at'] = (($transactions[$i]['created_at'])->modify('-1 month'));
-            }
-
-            $filteredTransactions = array_values($this->filterTransactions($transactions, $type, $courseCode, $skipExpired));
-
-            for ($i = 0; $i < count($filteredTransactions); $i++) {
-                unset($filteredTransactions[$i]['expireAt']);
-            }
-            
-            return $serializer->serialize($filteredTransactions, 'json');
-        }
-    }
-
-    public function filterTransactions($transactions, $type, $courseCode, $skipExpired)
-    {
-        if ($type == 'payment' && $skipExpired == true && !empty($courseCode)) {
-            return array_filter($transactions, function ($item) use ($courseCode) {
-                if ($item['type'] == 'payment' && $item['course'] == $courseCode && ($item['expireAt']) < (new \DateTime())) {
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-        } elseif ($type == 'payment' && !empty($courseCode)) {
-            return array_filter($transactions, function ($item) use ($courseCode) {
-                if ($item['type'] == 'payment' && $item['course'] == $courseCode) {
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-        } elseif ($skipExpired == true && !empty($courseCode)) {
-            return array_filter($transactions, function ($item) use ($courseCode) {
-                if ($item['course'] == $courseCode && ($item['expireAt']) < (new \DateTime())) {
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-        } elseif ($type == 'payment' && $skipExpired == true) {
-            return array_filter($transactions, function ($item) use ($courseCode) {
-                if ($item['type'] == 'payment' && ($item['expireAt']) < (new \DateTime())) {
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-        } elseif ($type == 'deposit' && $skipExpired == true) {
-            return array_filter($transactions, function ($item) use ($courseCode) {
-                if ($item['type'] == 'deposit' && ($item['expireAt']) < (new \DateTime())) {
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-        } elseif (!empty($courseCode)) {
-            return array_filter($transactions, function ($item) use ($courseCode) {
-                if (array_key_exists('course', $item)) {
-                    if ($item['course'] == $courseCode) {
-                        return true;
-                    } else {
-                        return false;
+        foreach ($transactions as $transaction) {
+            $tempArray = [];
+            if (isset($skipExpired) && $skipExpired == true) {
+                if (($transaction->getExpireAt()) > (new \DateTime())) {
+                    $tempArray['id'] = $transaction->getId();
+                    $tempArray['created_at'] = $transaction->getCreatedAt();
+                    switch ($transaction->getType()) {
+                        case PAYMENT:
+                            $tempArray['type'] = "payment";
+                            break;
+                        case DEPOSIT:
+                            $tempArray['type'] = 'deposit';
+                            break;
                     }
+                    if ($transaction->getCourse() != null) {
+                        $tempArray['course_code'] = ($transaction->getCourse())->getCode();
+                    }
+                    $tempArray['amount'] = $transaction->getValue();
+                    array_push($finalTransactions, $tempArray);
                 }
-            });
-        } elseif (!empty($skipExpired) && $skipExpired == true) {
-            return array_filter($transactions, function ($item) {
-                if ((new $item['expireAt']) < (new \DateTime())) {
-                    return true;
-                } else {
-                    return false;
+            } else {
+                $tempArray['id'] = $transaction->getId();
+                $tempArray['created_at'] = $transaction->getCreatedAt();
+                switch ($transaction->getType()) {
+                    case PAYMENT:
+                        $tempArray['type'] = "payment";
+                        break;
+                    case DEPOSIT:
+                        $tempArray['type'] = 'deposit';
+                        break;
                 }
-            });
-        } elseif ($type == 'deposit') {
-            return array_filter($transactions, function ($item) {
-                if ($item['type'] == 'deposit') {
-                    return true;
-                } else {
-                    return false;
+                if ($transaction->getCourse() != null) {
+                    $tempArray['course_code'] = ($transaction->getCourse())->getCode();
                 }
-            });
-        } elseif ($type == 'payment') {
-            return array_filter($transactions, function ($item) {
-                if ($item['type'] == 'payment') {
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-        } else {
-            return $transactions;
+                $tempArray['amount'] = $transaction->getValue();
+                array_push($finalTransactions, $tempArray);
+            }
         }
+ 
+        return $serializer->serialize($finalTransactions, 'json');
     }
 
     public function addTransaction($userId, $courseCode, $amount, $type)
@@ -142,9 +86,13 @@ class TransactionRepository extends ServiceEntityRepository
 
         $transaction = new Transaction();
         $transaction->setUserId($userId);
-        $transaction->setCourse($courseCode);
+
+        $course = $entityManager->getRepository(Course::class)->findOneBy(['code' => $courseCode]);
+
+        $transaction->setCourse($course);
         $transaction->setType($type);
         $transaction->setValue($amount);
+        $transaction->setCreatedAt((new \DateTime()));
         $expireTime = (new \DateTime())->modify('+1 month');
         $transaction->setExpireAt($expireTime);
 
@@ -163,7 +111,7 @@ class TransactionRepository extends ServiceEntityRepository
             $courseType = $this->decreaseBalance($userId, $courseCode);
 
             $coursePrice = $entityManager->getRepository(Course::class)->findOneBy(['code' => $courseCode])->getPrice();
-            $expireTime = $this->addTransaction($userId, $courseCode, $coursePrice, 0);
+            $expireTime = $this->addTransaction($userId, $courseCode, $coursePrice, PAYMENT);
             
             $entityManager->getConnection()->commit();
 
@@ -180,7 +128,7 @@ class TransactionRepository extends ServiceEntityRepository
 
         $entityManager->getConnection()->beginTransaction();
         try {
-            $this->addTransaction($userId, '', $amount, 1);
+            $this->addTransaction($userId, '', $amount, DEPOSIT);
             $this->increaseBalance($userId, $amount);
             $entityManager->getConnection()->commit();
         } catch (HttpException $e) {
@@ -229,15 +177,17 @@ class TransactionRepository extends ServiceEntityRepository
 
             $courseType = $course->getType();
 
-            if ($courseType== 0) {
-                return "rent";
-            } elseif ($courseType== 1) {
-                return 'buy';
-            } elseif ($courseType == 2) {
-                return 'free';
+            switch ($courseType) {
+                case 0:
+                    return 'rent';
+                    break;
+                case 1:
+                    return 'buy';
+                    break;
+                case 2:
+                    return 'free';
+                    break;
             }
-
-            return $courseType;
         }
     }
 }

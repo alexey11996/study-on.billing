@@ -22,11 +22,6 @@ class Transaction
     private $userId;
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
-    private $course;
-
-    /**
      * @ORM\Column(type="smallint")
      */
     private $type;
@@ -41,6 +36,16 @@ class Transaction
      */
     private $expireAt;
 
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Course", inversedBy="transactions")
+     */
+    private $course;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $created_at;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -54,18 +59,6 @@ class Transaction
     public function setUserId(int $userId): self
     {
         $this->userId = $userId;
-
-        return $this;
-    }
-
-    public function getCourse(): ?string
-    {
-        return $this->course;
-    }
-
-    public function setCourse(?string $course): self
-    {
-        $this->course = $course;
 
         return $this;
     }
@@ -102,6 +95,30 @@ class Transaction
     public function setExpireAt(\DateTimeInterface $expireAt): self
     {
         $this->expireAt = $expireAt;
+
+        return $this;
+    }
+
+    public function getCourse(): ?Course
+    {
+        return $this->course;
+    }
+
+    public function setCourse(?Course $course): self
+    {
+        $this->course = $course;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(?\DateTimeInterface $created_at): self
+    {
+        $this->created_at = $created_at;
 
         return $this;
     }
