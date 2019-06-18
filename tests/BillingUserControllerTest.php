@@ -108,16 +108,12 @@ class BillingUserControllerTest extends AbstractTest
         $this->assertSame(500, $client->getResponse()->getStatusCode());
     }
 
-    // public function testCurrentUser()
-    // {
-    //     $client = static::createClient();
-    //     $client->request('POST', '/api/v1/auth', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['username' => 'simpleUser@gmail.com', 'password' => 'passwordForSimpleUser']));
-    //     //$token = self::$kernel->getContainer()->get('lexik_jwt_authentication.encoder')->encode(['username' => 'simpleUser@gmail.com']);
-    //     $response = json_decode($client->getResponse()->getContent(), true);
-    //     //$user = (self::$kernel->getContainer()->get('security.token_storage')->getToken())->getUser();
-    //     //print_r($response);
-
-    //     $client->request('GET', '/api/v1/users/current', [], [], ['Authorization' => 'Bearer '.$response['token']]);
-    //     print_r($client->getResponse()->getContent());
-    // }
+    public function testCurrentUser()
+    {
+        $client = static::createClient();
+        $client->request('POST', '/api/v1/auth', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['username' => 'simpleUser@gmail.com', 'password' => 'passwordForSimpleUser']));
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $client->request('GET', '/api/v1/users/current', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$response['token']]);
+        $this->AssertContains('"username":"simpleUser@gmail.com","roles":["ROLE_USER"],"balance":1000', $client->getResponse()->getContent());
+    }
 }

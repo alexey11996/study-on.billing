@@ -14,12 +14,12 @@ class TransactionTest extends AbstractTest
         return [CourseFixtures::class];
     }
 
-    public function testGetTransactions()
+    public function testGetFirstDeposit()
     {
         $client = static::createClient();
         $client->request('POST', '/api/v1/register', [], [], [], json_encode(['email' => 'user@gmail.com', 'password' => '1234567']));
         $response = json_decode($client->getResponse()->getContent(), true);
-        $client->request('GET', '/api/v1/transactions', [], [], ['Authorization' => 'Bearer '.$response['token']]);
-        print_r($client->getResponse()->getContent());
+        $client->request('GET', '/api/v1/transactions', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$response['token']]);
+        $this->AssertContains('"type":"deposit","amount":1000.0', $client->getResponse()->getContent());
     }
 }
