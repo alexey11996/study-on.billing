@@ -10,13 +10,6 @@ use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use JMS\Serializer\SerializerBuilder;
 
-define('PAYMENT', 0);
-define('DEPOSIT', 1);
-
-define('RENT', 0);
-define('BUY', 1);
-define('FREE', 2);
-
 /**
  * @method Transaction|null find($id, $lockMode = null, $lockVersion = null)
  * @method Transaction|null findOneBy(array $criteria, array $orderBy = null)
@@ -25,77 +18,78 @@ define('FREE', 2);
  */
 class TransactionRepository extends ServiceEntityRepository
 {
+    const PAYMENT_TYPE = 0;
+    const DEPOSIT_TYPE = 1;
+
     public function __construct(RegistryInterface $registry)
     {
         parent::__construct($registry, Transaction::class);
     }
 
-    public function findAllTransactions($parameters, $skipExpired)
+    public function findAllTransactions($user, $courseCode, $type, $skipExpired)
     {
+        $serializer = SerializerBuilder::create()->build();
+
         $finalTransactions = [];
 
-        $serializer = SerializerBuilder::create()->build();
-        
-        $transactions = $this->findBy($parameters);
+        $transactionsQB = $this->createQueryBuilder('t')->andWhere('t.userId = :user')->setParameter('user', $user->getId());
+
+        if (isset($courseCode)) {
+            $course = $this->getEntityManager()->getRepository(Course::class)->findOneBy(['code' => $courseCode]);
+            if (!$course) {
+                throw new HttpException(404, 'No course found');
+            } else {
+                $transactionsQB->andWhere('t.course = :course')->setParameter('course', $course);
+            }
+        } elseif (isset($type)) {
+            if ($type == 'payment' || $type == 'deposit') {
+                switch ($type) {
+                    case 'payment':
+                        $type = 0;
+                        break;
+                    case 'deposit':
+                        $type = 1;
+                        break;
+            }
+                $transactionsQB->andWhere('t.type = :type')->setParameter('type', $type);
+            } else {
+                throw new HttpException(400, 'Type must be payment or deposit');
+            }
+        } elseif (isset($skipExpired)) {
+            $transactionsQB->andWhere("t.expireAt > :date")->setParameter('date', date("Y-m-d", time()));
+        }
+
+        $transactions = $transactionsQB->getQuery()->execute();
 
         foreach ($transactions as $transaction) {
             $tempArray = [];
-            if (isset($skipExpired) && $skipExpired == true) {
-                if (($transaction->getExpireAt()) > (new \DateTime())) {
-                    $tempArray['id'] = $transaction->getId();
-                    $tempArray['created_at'] = $transaction->getCreatedAt();
-                    switch ($transaction->getType()) {
-                        case PAYMENT:
-                            $tempArray['type'] = "payment";
-                            break;
-                        case DEPOSIT:
-                            $tempArray['type'] = 'deposit';
-                            break;
-                    }
-                    if ($transaction->getCourse() != null) {
-                        $tempArray['course_code'] = ($transaction->getCourse())->getCode();
-                    }
-                    $tempArray['amount'] = $transaction->getValue();
-                    array_push($finalTransactions, $tempArray);
-                }
-            } else {
-                $tempArray['id'] = $transaction->getId();
-                $tempArray['created_at'] = $transaction->getCreatedAt();
-                switch ($transaction->getType()) {
-                    case PAYMENT:
-                        $tempArray['type'] = "payment";
-                        break;
-                    case DEPOSIT:
-                        $tempArray['type'] = 'deposit';
-                        break;
-                }
-                if ($transaction->getCourse() != null) {
-                    $tempArray['course_code'] = ($transaction->getCourse())->getCode();
-                }
-                $tempArray['amount'] = $transaction->getValue();
-                array_push($finalTransactions, $tempArray);
+            $tempArray['id'] = $transaction->getId();
+            $tempArray['created_at'] = $transaction->getCreatedAt();
+            $tempArray['type'] = $transaction->getConvertedType();
+
+            if ($transaction->getCourse() != null) {
+                $tempArray['course_code'] = ($transaction->getCourse())->getCode();
             }
+            $tempArray['amount'] = $transaction->getValue();
+            $tempArray['expires_at'] = $transaction->getExpireAt();
+            array_push($finalTransactions, $tempArray);
         }
  
         return $serializer->serialize($finalTransactions, 'json');
     }
 
-    public function addTransaction($userId, $courseCode, $amount, $type)
+    public function addTransaction($userId, $course, $amount, $type)
     {
         $entityManager = $this->getEntityManager();
 
         $transaction = new Transaction();
         $transaction->setUserId($userId);
-
-        $course = $entityManager->getRepository(Course::class)->findOneBy(['code' => $courseCode]);
-
         $transaction->setCourse($course);
         $transaction->setType($type);
         $transaction->setValue($amount);
         $transaction->setCreatedAt((new \DateTime()));
-        $expireTime = (new \DateTime())->modify('+1 month');
+        $expireTime = $_ENV['EXPIRE_TIME'];
         $transaction->setExpireAt($expireTime);
-
         $entityManager->persist($transaction);
         $entityManager->flush();
 
@@ -108,14 +102,19 @@ class TransactionRepository extends ServiceEntityRepository
 
         $entityManager->getConnection()->beginTransaction();
         try {
-            $courseType = $this->decreaseBalance($userId, $courseCode);
+            $course = $entityManager->getRepository(Course::class)->findOneBy(['code' => $courseCode]);
 
-            $coursePrice = $entityManager->getRepository(Course::class)->findOneBy(['code' => $courseCode])->getPrice();
-            $expireTime = $this->addTransaction($userId, $courseCode, $coursePrice, PAYMENT);
-            
-            $entityManager->getConnection()->commit();
+            if ($course) {
+                $this->decreaseBalance($userId, $course);
 
-            return json_encode(['success' => true, 'course_type' => $courseType, 'exrires_at' => $expireTime]);
+                $expireTime = $this->addTransaction($userId, $course, $course->getPrice(), self::PAYMENT_TYPE);
+                
+                $entityManager->getConnection()->commit();
+    
+                return json_encode(['success' => true, 'course_type' => $course->getConvertedType(), 'exrires_at' => $expireTime]);
+            } else {
+                throw new HttpException(404, 'No course found');
+            }
         } catch (HttpException $e) {
             $entityManager->getConnection()->rollBack();
             throw $e;
@@ -128,7 +127,7 @@ class TransactionRepository extends ServiceEntityRepository
 
         $entityManager->getConnection()->beginTransaction();
         try {
-            $this->addTransaction($userId, '', $amount, DEPOSIT);
+            $this->addTransaction($userId, null, $amount, self::DEPOSIT_TYPE);
             $this->increaseBalance($userId, $amount);
             $entityManager->getConnection()->commit();
         } catch (HttpException $e) {
@@ -153,15 +152,13 @@ class TransactionRepository extends ServiceEntityRepository
         $entityManager->flush();
     }
 
-    public function decreaseBalance($userId, $courseCode)
+    public function decreaseBalance($userId, $course)
     {
         $entityManager = $this->getEntityManager();
 
         $user = $entityManager->getRepository(BillingUser::class)->findOneBy(['id' => $userId]);
 
         $currentBalance = $user->getBalance();
-        
-        $course = $entityManager->getRepository(Course::class)->findOneBy(['code' => $courseCode]);
 
         $coursePrice = $course->getPrice();
 
@@ -174,20 +171,6 @@ class TransactionRepository extends ServiceEntityRepository
             
             $entityManager->persist($user);
             $entityManager->flush();
-
-            $courseType = $course->getType();
-
-            switch ($courseType) {
-                case 0:
-                    return 'rent';
-                    break;
-                case 1:
-                    return 'buy';
-                    break;
-                case 2:
-                    return 'free';
-                    break;
-            }
         }
     }
 }

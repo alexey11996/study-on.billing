@@ -68,11 +68,13 @@ abstract class AbstractTest extends WebTestCase
         /** @var UserPasswordEncoderInterface $encoder */
         $encoder = self::$kernel->getContainer()->get('security.password_encoder');
 
+        $paymentService = self::$kernel->getContainer()->get('App\Service\PaymentService');
+
         $loader = new Loader();
 
         foreach ($fixtures as $fixture) {
             if (!\is_object($fixture)) {
-                $fixture = new $fixture($encoder);
+                $fixture = new $fixture($encoder, $paymentService);
             }
 
             if ($fixture instanceof ContainerAwareInterface) {

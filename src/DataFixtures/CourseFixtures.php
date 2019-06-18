@@ -9,24 +9,24 @@ use App\Entity\Transaction;
 
 class CourseFixtures extends Fixture
 {
+    const PAYMENT_TYPE = 0;
+    const DEPOSIT_TYPE = 1;
+
+    const RENT_COURSE = 0;
+    const BUY_COURSE = 1;
+    const FREE_COURSE = 2;
+
     public function load(ObjectManager $manager)
     {
-        /**
-         * Course types: 0 - rent, 1 - buy, 2 - free
-         */
         $courseCode = ['mern-stack-front-to-back-full-stack-react-redux-node-js', 'build-a-blockchain-and-a-cryptocurrency-from-scratch', 'java-programming-masterclass-for-software-developers'];
-        $courseType = [RENT, BUY, FREE];
+        $courseType = [self::RENT_COURSE, self::BUY_COURSE, self::FREE_COURSE];
         $coursePrice = [25.55, 20.25, 0.0];
-
-        /**
-         * Transaction types: 0 - payment, 1 - deposit
-         */
 
         $transactionSender = [9, 11, 14];
         $transactionForCourse = ['mern-stack-front-to-back-full-stack-react-redux-node-js', 'build-a-blockchain-and-a-cryptocurrency-from-scratch', 'java-programming-masterclass-for-software-developers'];
-        $transactionType = [PAYMENT, PAYMENT, DEPOSIT];
+        $transactionType = [self::PAYMENT_TYPE, self::PAYMENT_TYPE, self::DEPOSIT_TYPE];
         $transactionValue = [250.2, 300.55, 275.45];
-        $transactionExpireAt = [(new \DateTime())->modify('+1 month'), (new \DateTime())->modify('+1 day'), (new \DateTime())->modify('+1 hour')];
+        $transactionExpireAt = [(new \DateTime())->modify('+1 month'), (new \DateTime())->modify('+1 day'), (new \DateTime())->modify('+1 second')];
 
         for ($i = 0; $i < 3; $i++) {
             $course = new Course();

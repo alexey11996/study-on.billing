@@ -27,7 +27,7 @@ class BillingUserControllerTest extends AbstractTest
     {
         $client = static::createClient();
         $client->request('POST', '/api/v1/register', [], [], [], json_encode(['email' => 'simpleUser@gmail.com', 'password' => '1234567']));
-        $this->AssertContains('"errors":["Email already exists"]', $client->getResponse()->getContent());
+        $this->AssertContains('"code":400,"message":["Email already exists"]', $client->getResponse()->getContent());
         $this->assertSame(400, $client->getResponse()->getStatusCode());
     }
 
@@ -35,7 +35,7 @@ class BillingUserControllerTest extends AbstractTest
     {
         $client = static::createClient();
         $client->request('POST', '/api/v1/register', [], [], [], json_encode(['email' => '', 'password' => '']));
-        $this->AssertContains('"errors":["Blank email","Blank password"]', $client->getResponse()->getContent());
+        $this->AssertContains('"code":400,"message":["Blank email","Blank password"]', $client->getResponse()->getContent());
         $this->assertSame(400, $client->getResponse()->getStatusCode());
     }
 
@@ -43,7 +43,7 @@ class BillingUserControllerTest extends AbstractTest
     {
         $client = static::createClient();
         $client->request('POST', '/api/v1/register', [], [], [], json_encode(['email' => 'userGmail.com', 'password' => '123']));
-        $this->AssertContains('"errors":["Invalid email","Password must be at least 6 symbols"]', $client->getResponse()->getContent());
+        $this->AssertContains('"code":400,"message":["Invalid email","Password must be at least 6 symbols"]', $client->getResponse()->getContent());
         $this->assertSame(400, $client->getResponse()->getStatusCode());
     }
 
@@ -107,4 +107,17 @@ class BillingUserControllerTest extends AbstractTest
         $this->AssertContains('"code":500,"message":"Could not decode JSON, syntax error - malformed JSON."', $client->getResponse()->getContent());
         $this->assertSame(500, $client->getResponse()->getStatusCode());
     }
+
+    // public function testCurrentUser()
+    // {
+    //     $client = static::createClient();
+    //     $client->request('POST', '/api/v1/auth', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['username' => 'simpleUser@gmail.com', 'password' => 'passwordForSimpleUser']));
+    //     //$token = self::$kernel->getContainer()->get('lexik_jwt_authentication.encoder')->encode(['username' => 'simpleUser@gmail.com']);
+    //     $response = json_decode($client->getResponse()->getContent(), true);
+    //     //$user = (self::$kernel->getContainer()->get('security.token_storage')->getToken())->getUser();
+    //     //print_r($response);
+
+    //     $client->request('GET', '/api/v1/users/current', [], [], ['Authorization' => 'Bearer '.$response['token']]);
+    //     print_r($client->getResponse()->getContent());
+    // }
 }

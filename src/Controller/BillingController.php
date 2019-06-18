@@ -268,6 +268,7 @@ class BillingController extends AbstractController
     public function currentUser()
     {
         $user = $this->getUser();
+        //$user = ($this->container->get('security.token_storage')->getToken())->getUser();
         
         $response = new Response();
         $response->setContent(json_encode(["username" => $user->getUsername(), "roles" => $user->getRoles(), "balance" => $user->getBalance()]));
@@ -425,16 +426,7 @@ class BillingController extends AbstractController
         $type = $request->query->get('type');
         $skipExpired = $request->query->get('skip_expired');
 
-        $parameters['userId'] = $user->getId();
-
-        if (isset($courseCode)) {
-            $course = $this->getDoctrine()->getRepository(Course::class)->findOneBy(['code' => $courseCode]);
-            $parameters['course'] = $course;
-        } elseif (isset($type)) {
-            $parameters['type'] = $type;
-        }
-        
-        $transactions = $this->getDoctrine()->getRepository(Transaction::class)->findAllTransactions($parameters, $skipExpired);
+        $transactions = $this->getDoctrine()->getRepository(Transaction::class)->findAllTransactions($user, $courseCode, $type, $skipExpired);
 
         $response = new Response();
  

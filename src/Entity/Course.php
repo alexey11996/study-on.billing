@@ -11,6 +11,10 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Course
 {
+    const RENT_COURSE = 0;
+    const BUY_COURSE = 1;
+    const FREE_COURSE = 2;
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
@@ -70,6 +74,21 @@ class Course
         $this->type = $type;
 
         return $this;
+    }
+
+    public function getConvertedType(): ?string
+    {
+        switch ($this->getType()) {
+            case self::RENT_COURSE:
+                return 'rent';
+                break;
+            case  self::BUY_COURSE:
+                return 'buy';
+                break;
+            case self::FREE_COURSE:
+                return 'free';
+                break;
+        }
     }
 
     public function getPrice(): ?float

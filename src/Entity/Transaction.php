@@ -9,6 +9,9 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Transaction
 {
+    const PAYMENT_TYPE = 0;
+    const DEPOSIT_TYPE = 1;
+
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue()
@@ -73,6 +76,18 @@ class Transaction
         $this->type = $type;
 
         return $this;
+    }
+
+    public function getConvertedType(): ?string
+    {
+        switch ($this->getType()) {
+            case self::PAYMENT_TYPE:
+                return 'payment';
+                break;
+            case  self::DEPOSIT_TYPE:
+                return 'deposit';
+                break;
+        }
     }
 
     public function getValue(): ?float

@@ -34,7 +34,7 @@ class BillingUser implements UserInterface
     private $password;
 
     /**
-     * @ORM\Column(type="float")
+     * @ORM\Column(type="float", nullable=false)
      */
     private $balance;
 
