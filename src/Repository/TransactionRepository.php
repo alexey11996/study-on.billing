@@ -26,6 +26,21 @@ class TransactionRepository extends ServiceEntityRepository
         parent::__construct($registry, Transaction::class);
     }
 
+    public function findEndRentTransactions()
+    {
+        $serializer = SerializerBuilder::create()->build();
+
+        $transactions = $this->createQueryBuilder('t')
+            ->innerJoin("t.course", "c")
+            ->andWhere("c.type = 0")
+            ->andWhere(" t.expireAt BETWEEN :today AND :tommorrow")
+            ->setParameter('today', date("Y-m-d", time()))
+            ->setParameter('tommorrow', date("Y-m-d", strtotime('+24 hours')))
+            ->getQuery()->execute();
+
+        return $serializer->serialize($transactions, 'json');
+    }
+
     public function findAllTransactions($user, $courseCode, $type, $skipExpired)
     {
         $serializer = SerializerBuilder::create()->build();

@@ -32,3 +32,9 @@ services:
     links:
       - postgres
     user: ${UID:-1000}:${GID:-1000}
+  mailhog:
+    image: mailhog/mailhog
+    container_name: "mailhog"
+    ports:
+      - "1025:1025"
+      - "8025:8025"

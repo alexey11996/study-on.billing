@@ -28,6 +28,11 @@ class Course
     private $code;
 
     /**
+     * @ORM\Column(type="string", length=255)
+     */
+    private $title;
+
+    /**
      * @ORM\Column(type="smallint")
      */
     private $type;
@@ -60,6 +65,18 @@ class Course
     public function setCode(string $code): self
     {
         $this->code = $code;
+
+        return $this;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(string $title): self
+    {
+        $this->title = $title;
 
         return $this;
     }
@@ -132,5 +149,44 @@ class Course
         }
 
         return $this;
+    }
+
+    public static function fromDto($course, $userDto)
+    {
+        if (isset($course)) {
+            $course->setCode($userDto->code);
+            $course->setTitle($userDto->title);
+            switch ($userDto->type) {
+                case 'rent':
+                    $userDto->type = 0;
+                    break;
+                case 'buy':
+                    $userDto->type = 1;
+                    break;
+                case 'free':
+                    $userDto->type = 2;
+                    break;
+            }
+            $course->setType($userDto->type);
+            $course->setPrice($userDto->price);
+        } else {
+            $course = new Course();
+            $course->setCode($userDto->code);
+            $course->setTitle($userDto->title);
+            switch ($userDto->type) {
+                case 'rent':
+                    $userDto->type = 0;
+                    break;
+                case 'buy':
+                    $userDto->type = 1;
+                    break;
+                case 'free':
+                    $userDto->type = 2;
+                    break;
+            }
+            $course->setType($userDto->type);
+            $course->setPrice($userDto->price);
+        }
+        return $course;
     }
 }

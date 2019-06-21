@@ -61,3 +61,11 @@ services:
     arguments:
       $entityManager: "@doctrine.orm.entity_manager"
       $initPayment: "%env(INIT_PAYMENT)%"
+
+  App\Service\Twig:
+    public: true
+
+  App\Command\EndRentNotification:
+    public: true
+    arguments:
+      $sendFrom: "studyOn@mail.ru"

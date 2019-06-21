@@ -114,6 +114,33 @@ class BillingUserControllerTest extends AbstractTest
         $client->request('POST', '/api/v1/auth', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['username' => 'simpleUser@gmail.com', 'password' => 'passwordForSimpleUser']));
         $response = json_decode($client->getResponse()->getContent(), true);
         $client->request('GET', '/api/v1/users/current', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$response['token']]);
-        $this->AssertContains('"username":"simpleUser@gmail.com","roles":["ROLE_USER"],"balance":1000', $client->getResponse()->getContent());
+        $this->AssertContains('"username":"simpleUser@gmail.com","roles":["ROLE_USER"],"balance":1500', $client->getResponse()->getContent());
+    }
+
+    public function testCurrentUserInvalidToken()
+    {
+        $client = static::createClient();
+        $client->request('POST', '/api/v1/auth', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['username' => 'simpleUser@gmail.com', 'password' => 'passwordForSimpleUser']));
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $client->request('GET', '/api/v1/users/current', [], [], ['HTTP_AUTHORIZATION' => 'Bearer jf9834hfuf87efr']);
+        $this->AssertContains('"code":401,"message":"Invalid JWT Token"', $client->getResponse()->getContent());
+    }
+
+    public function testRefreshToken()
+    {
+        $client = static::createClient();
+        $client->request('POST', '/api/v1/auth', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['username' => 'simpleUser@gmail.com', 'password' => 'passwordForSimpleUser']));
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $client->request('POST', '/api/v1/token/refresh', [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer '.$response['token']], json_encode(['refresh_token' => $response['refresh_token']]));
+        $this->AssertContains('"token"', $client->getResponse()->getContent());
+    }
+
+    public function testRefreshWrongToken()
+    {
+        $client = static::createClient();
+        $client->request('POST', '/api/v1/auth', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode(['username' => 'simpleUser@gmail.com', 'password' => 'passwordForSimpleUser']));
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $client->request('POST', '/api/v1/token/refresh', [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer '.$response['token']], json_encode(['refresh_token' => 'gfh89383h99ut']));
+        $this->AssertContains('"code":401,"message":"Bad credentials, please verify your username and password"', $client->getResponse()->getContent());
     }
 }

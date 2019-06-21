@@ -30,8 +30,33 @@ security:
       guard:
         authenticators:
           - lexik_jwt_authentication.jwt_token_authenticator
+    course_new:
+      pattern: ^/api/v1/courses
+      methods: POST
+      stateless: true
+      anonymous: false
+      guard:
+        authenticators:
+          - lexik_jwt_authentication.jwt_token_authenticator
+    course_update:
+      pattern: ^/api/v1/courses/(.+)
+      methods: POST
+      stateless: true
+      anonymous: false
+      guard:
+        authenticators:
+          - lexik_jwt_authentication.jwt_token_authenticator
+    course_delete:
+      pattern: ^/api/v1/courses/(.+)
+      methods: DELETE
+      stateless: true
+      anonymous: false
+      guard:
+        authenticators:
+          - lexik_jwt_authentication.jwt_token_authenticator
     courses:
       pattern: ^/api/v1/courses
+      methods: GET
       stateless: true
       anonymous: true
     refresh:
@@ -68,4 +93,7 @@ security:
     - { path: ^/api/current_user, roles: IS_AUTHENTICATED_FULLY }
     - { path: ^/api/course_pay, roles: IS_AUTHENTICATED_FULLY }
     - { path: ^/api/transactions, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/api/course_new, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/api/course_delete, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/api/course_update, roles: IS_AUTHENTICATED_FULLY }
     - { path: ^/api/courses, roles: IS_AUTHENTICATED_ANONYMOUSLY }
