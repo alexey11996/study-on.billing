@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+    Study-on
+{% endblock %}
+
+{% block body %}
+    {% if courses %}
+        <div>
+            Отчет об оплаченных курсах за период
+            {{ startDate| date("d.m.Y") }}
+            -
+            {{ endDate| date("d.m.Y") }}
+        </div>
+        <br/>
+        <table>
+            <tr>
+                <th>Название курса</th>
+                <th>Тип курса</th>
+                <th>Число аренд/покупок</th>
+                <th>Общая сумма ($)</th>
+            </tr>
+            {% for course in courses %}
+                <tr>
+                    <td>{{ course.title }}</td>
+                    {% if course.type is same as(0) %}
+                        <td>Аренда</td>
+                    {% else %}
+                        <td>Покупка</td>
+                    {% endif %}
+                    <td>{{ course.countBuyAndRent }}</td>
+                    <td>{{ course.TotalPrice }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        <div>
+            <br/>
+            ИТОГО:
+            {{ totalPrice }}$
+            <div/>
+        {% else %}
+            <div>
+                В период с
+                {{ startDate| date("d.m.Y") }}
+                по
+                {{ endDate| date("d.m.Y") }}
+                купленных курсов не обнаружено.
+            </div>
+        {% endif %}
+    {% endblock %}

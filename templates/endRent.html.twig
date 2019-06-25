@@ -5,7 +5,11 @@
 
 {% block body %}
     Уважаемый клиент! У вас есть курсы, срок аренды которых подходит к концу:
-            курс 1
-            курс 2
-            курс 3
+    {% for course in courses %}
+        <div>
+            <b>{{ course.title }}</b>
+            истекает
+            <b>{{ course.expireAt| date("d.m.Y / h:i") }}</b>
+        </div>
+    {% endfor %}
 {% endblock %}

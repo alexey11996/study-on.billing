@@ -21,16 +21,37 @@ class TransactionRepository extends ServiceEntityRepository
     const PAYMENT_TYPE = 0;
     const DEPOSIT_TYPE = 1;
 
+    const RENT_COURSE = 0;
+    const BUY_COURSE = 1;
+
     public function __construct(RegistryInterface $registry)
     {
         parent::__construct($registry, Transaction::class);
     }
 
+    public function generateMonthReport()
+    {
+        $startDate = date("Y-m-d", strtotime('-1 month'));
+        $endDate = date("Y-m-d", time());
+
+        $courses = $this->createQueryBuilder('t')
+            ->select('c.title', 'c.type', 'COUNT(c.title) as countBuyAndRent', 'SUM(c.price) as TotalPrice')
+            ->innerJoin('t.course', 'c')
+            ->andWhere(" t.expireAt BETWEEN :startDate AND :endDate")
+            ->setParameter('startDate', $startDate)
+            ->setParameter('endDate', $endDate)
+            ->groupBy('c.title', 'c.type')
+            ->getQuery()->execute();
+        
+        $totalPrice = array_sum(array_column($courses, 'TotalPrice'));
+
+        return ['courses' => $courses, 'startDate' => $startDate, 'endDate' => $endDate, 'totalPrice' => $totalPrice];
+    }
+
     public function findEndRentTransactions()
     {
-        $serializer = SerializerBuilder::create()->build();
-
         $transactions = $this->createQueryBuilder('t')
+            ->select('t.userId', 'c.title', 't.expireAt')
             ->innerJoin("t.course", "c")
             ->andWhere("c.type = 0")
             ->andWhere(" t.expireAt BETWEEN :today AND :tommorrow")
@@ -38,13 +59,11 @@ class TransactionRepository extends ServiceEntityRepository
             ->setParameter('tommorrow', date("Y-m-d", strtotime('+24 hours')))
             ->getQuery()->execute();
 
-        return $serializer->serialize($transactions, 'json');
+        return $transactions;
     }
 
     public function findAllTransactions($user, $courseCode, $type, $skipExpired)
     {
-        $serializer = SerializerBuilder::create()->build();
-
         $finalTransactions = [];
 
         $transactionsQB = $this->createQueryBuilder('t')->andWhere('t.userId = :user')->setParameter('user', $user->getId());
@@ -60,10 +79,10 @@ class TransactionRepository extends ServiceEntityRepository
             if ($type == 'payment' || $type == 'deposit') {
                 switch ($type) {
                     case 'payment':
-                        $type = 0;
+                        $type = self::PAYMENT_TYPE;
                         break;
                     case 'deposit':
-                        $type = 1;
+                        $type = self::DEPOSIT_TYPE;
                         break;
             }
                 $transactionsQB->andWhere('t.type = :type')->setParameter('type', $type);
@@ -90,7 +109,7 @@ class TransactionRepository extends ServiceEntityRepository
             array_push($finalTransactions, $tempArray);
         }
  
-        return $serializer->serialize($finalTransactions, 'json');
+        return $finalTransactions;
     }
 
     public function addTransaction($userId, $course, $amount, $type)

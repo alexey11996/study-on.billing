@@ -49,8 +49,7 @@ class CourseRepository extends ServiceEntityRepository
                 }
             }
 
-            $serializer = SerializerBuilder::create()->build();
-            return $serializer->serialize($courses, 'json');
+            return $courses;
         }
     }
 
@@ -81,8 +80,8 @@ class CourseRepository extends ServiceEntityRepository
                 }
             }
 
-            $serializer = SerializerBuilder::create()->build();
-            return $serializer->serialize($course, 'json');
+            
+            return $course;
         }
     }
 }

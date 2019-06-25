@@ -69,3 +69,11 @@ services:
     public: true
     arguments:
       $sendFrom: "studyOn@mail.ru"
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Command\ReportNotification:
+    public: true
+    arguments:
+      $sendFrom: "studyOn@mail.ru"
+      $sendTo: "admin@mail.ru"
+      $entityManager: "@doctrine.orm.entity_manager"

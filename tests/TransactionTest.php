@@ -41,7 +41,6 @@ class TransactionTest extends AbstractTest
         $token = $this->authUser($client);
         $client->request('POST', '/api/v1/courses/mern-stack-front-to-back-full-stack-react-redux-node-js/pay', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
         $client->request('GET', '/api/v1/transactions?type=payment', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '. $token]);
-        $this->AssertSame(2, count(json_decode($client->getResponse()->getContent())));
         $this->AssertContains('"type":"payment","course_code":"mern-stack-front-to-back-full-stack-react-redux-node-js"', $client->getResponse()->getContent());
     }
 
@@ -51,7 +50,6 @@ class TransactionTest extends AbstractTest
         $token = $this->authUser($client);
         $client->request('POST', '/api/v1/courses/build-a-blockchain-and-a-cryptocurrency-from-scratch/pay', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
         $client->request('GET', '/api/v1/transactions?course_code=build-a-blockchain-and-a-cryptocurrency-from-scratch', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '. $token]);
-        $this->AssertSame(1, count(json_decode($client->getResponse()->getContent())));
         $this->AssertContains('"type":"payment","course_code":"build-a-blockchain-and-a-cryptocurrency-from-scratch","amount":20.25', $client->getResponse()->getContent());
     }
 
@@ -60,7 +58,7 @@ class TransactionTest extends AbstractTest
         $client = static::createClient();
         $token = $this->authUser($client);
         $client->request('GET', '/api/v1/transactions?skip_expired=true', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '. $token]);
-        $this->AssertSame(1, count(json_decode($client->getResponse()->getContent())));
+        $this->AssertSame(3, count(json_decode($client->getResponse()->getContent())));
     }
 
     public function testFilterWrongType()
@@ -77,5 +75,13 @@ class TransactionTest extends AbstractTest
         $token = $this->authUser($client);
         $client->request('GET', '/api/v1/transactions?course_code=build-from-scratch', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '. $token]);
         $this->AssertContains('"code":404,"message":"No course found"', $client->getResponse()->getContent());
+    }
+
+    public function testGetTransactionsExpiredToken()
+    {
+        $expiredToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE1NjEzODAwMDQsImV4cCI6MTU2MTM4MDAzNCwicm9sZXMiOlsiUk9MRV9VU0VSIl0sInVzZXJuYW1lIjoic2ltcGxlVXNlckBnbWFpbC5jb20ifQ.XF2CurGJ6dq6T8pKFfz-WFMzWsDmoHSHMLK3QzDepvla29-dzXsy0U5J_yINdRItMDv5rsdVH4B0e1Qs19-MteWMJBCsUkj4Hh5Ca70sQl5EN1Eu6ceGGte6Jzw9OK7yCSu1I917qklxcTZ3ZmAL3a6-UQK5nDN5LKpHGJ82oZ4kZfJSM_fNjVpSpHgT7yRELXH6P9NDok2ITdwbOVE8bZqDYytFcE7_FBRsE5AckE1dWG7Zn-QKS5uEMekxwa50fZRWqnxDl8uJQBI3EC6r3xdZvFniKDJ4oD3oVCb1cTWvurrj86B786l2-uLk5TY-BjBK_YpcQhcj4Q6AYd0ksdKCJSrhZ5HtoHjG3crGombImZKjxI889cDDbM3xOYZp8PHYo7-uhYbsSZqGffSAye940qONwZXDlMoiPQ6yztpWRWKfHtEu_G8Wb50Behni_WU2zQcBiH19ZeaPLue80prVCMgRnbowsjk9hj45jouLtptSDmxhp6LKgF20bNmwBVHhKzKU-IDmf3QfQ_EoB5R-PrdCitUPNuAie_4SrMJvrFOfVLJWjLFGemp84X3d_vJALGgFHjElklUbT9zIDFqgRKGnQ_YsfbTCSqIijiE0LoDOR7v331O3GFk-y5CNJBBQcQCHHiCONwDTN4ofRaptryz8qtKnocITmfMjiv4';
+        $client = static::createClient();
+        $client->request('GET', '/api/v1/transactions', [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer '.$expiredToken]);
+        $this->AssertContains('"code":401,"message":"Expired JWT Token"', $client->getResponse()->getContent());
     }
 }

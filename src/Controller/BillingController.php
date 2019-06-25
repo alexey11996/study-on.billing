@@ -440,12 +440,13 @@ class BillingController extends AbstractController
     */
     public function courses(Request $request, ValidatorInterface $validator)
     {
+        $serializer = SerializerBuilder::create()->build();
         $response = new Response();
 
         if ($request->isMethod('GET')) {
             $courses = $this->getDoctrine()->getRepository(Course::class)->findAllCourses();
 
-            $response->setContent($courses);
+            $response->setContent($serializer->serialize($courses, 'json'));
             $response->setStatusCode(Response::HTTP_OK);
         } elseif ($request->isMethod('POST')) {
             if (in_array('ROLE_SUPER_ADMIN', $this->getUser()->getRoles())) {
@@ -624,12 +625,13 @@ class BillingController extends AbstractController
      */
     public function course($code, Request $request, ValidatorInterface $validator)
     {
+        $serializer = SerializerBuilder::create()->build();
         $response = new Response();
         
         if ($request->isMethod('GET')) {
             $course = $this->getDoctrine()->getRepository(Course::class)->findCourseByCode($code);
             
-            $response->setContent($course);
+            $response->setContent($serializer->serialize($course, 'json'));
             $response->setStatusCode(Response::HTTP_OK);
         } elseif ($request->isMethod('POST')) {
             if (in_array('ROLE_SUPER_ADMIN', $this->getUser()->getRoles())) {
@@ -643,21 +645,24 @@ class BillingController extends AbstractController
                     }
                     $response->setContent(json_encode(['code' => 400, 'message' => $jsonErrors]));
                     $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-                } elseif ($code != $courseDto->code) {
-                    if ($this->getDoctrine()->getRepository(Course::class)->findBy(['code' => $courseDto->code])) {
-                        $response->setContent(json_encode(['code' => 400, 'message' => 'Course code must be unique']));
+                } elseif (($code == $courseDto->code) || (($code != $courseDto->code) && (!$this->getDoctrine()->getRepository(Course::class)->findBy(['code' => $courseDto->code])))) {
+                    $foundCourse = $this->getDoctrine()->getRepository(Course::class)->findOneBy(['code' => $code]);
+                    if ($foundCourse) {
+                        $course = Course::fromDto($foundCourse, $courseDto);
+        
+                        $entityManager = $this->getDoctrine()->getManager();
+                        $entityManager->persist($course);
+                        $entityManager->flush();
+            
+                        $response->setContent(json_encode(['success' => true]));
+                        $response->setStatusCode(Response::HTTP_OK);
+                    } else {
+                        $response->setContent(json_encode(['code' => 404, 'message' => 'Course not found']));
                         $response->setStatusCode(Response::HTTP_BAD_REQUEST);
                     }
                 } else {
-                    $foundCourse = $this->getDoctrine()->getRepository(Course::class)->findOneBy(['code' => $code]);
-                    $course = Course::fromDto($foundCourse, $courseDto);
-    
-                    $entityManager = $this->getDoctrine()->getManager();
-                    $entityManager->persist($course);
-                    $entityManager->flush();
-        
-                    $response->setContent(json_encode(['success' => true]));
-                    $response->setStatusCode(Response::HTTP_OK);
+                    $response->setContent(json_encode(['code' => 400, 'message' => 'Course code must be unique']));
+                    $response->setStatusCode(Response::HTTP_BAD_REQUEST);
                 }
             } else {
                 throw new HttpException(403, 'Access denied');
@@ -667,6 +672,9 @@ class BillingController extends AbstractController
                 $course = $this->getDoctrine()->getRepository(Course::class)->findOneBy(['code' => $code]);
                 if (!$course) {
                     $response->setContent(json_encode(['code' => 400, 'message' => 'Course not found']));
+                    $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+                } elseif ($this->getDoctrine()->getRepository(Transaction::class)->findOneBy(['course' => $course])) {
+                    $response->setContent(json_encode(['code' => 400, 'message' => 'This course exists in some transactions']));
                     $response->setStatusCode(Response::HTTP_BAD_REQUEST);
                 } else {
                     $entityManager = $this->getDoctrine()->getManager();
@@ -739,6 +747,8 @@ class BillingController extends AbstractController
      */
     public function transactions(Request $request)
     {
+        $serializer = SerializerBuilder::create()->build();
+
         $user = $this->getUser();
 
         $courseCode = $request->query->get('course_code');
@@ -749,7 +759,7 @@ class BillingController extends AbstractController
 
         $response = new Response();
  
-        $response->setContent($transactions);
+        $response->setContent($serializer->serialize($transactions, 'json'));
         $response->setStatusCode(Response::HTTP_OK);
 
         return $response;

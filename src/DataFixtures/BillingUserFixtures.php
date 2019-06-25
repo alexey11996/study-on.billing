@@ -32,13 +32,13 @@ class BillingUserFixtures extends Fixture
     public function load(ObjectManager $manager)
     {
         $userEmails = ['simpleUser@gmail.com', 'adminUser@gmail.com', 'alex@mail.ru'];
-        $userRoles = [['ROLE_USER'], ['ROLE_SUPER_ADMIN'], ['ROLE_USER']];
+        $userRoles = [['ROLE_USER'], ['ROLE_SUPER_ADMIN'], ['ROLE_USER','ROLE_SUPER_ADMIN']];
         $userPasswords = ['passwordForSimpleUser', 'passwordForAdminUser', '123456'];
         $userBalance = [500, 100, 5000];
 
         $courseTitle = ['MERN Stack Front To Back: Full Stack React, Redux & Node.js', 'Build a Blockchain and a Cryptocurrency from Scratch', 'Symfony course from absolute zero', 'Java Programming Masterclass for Software Developers'];
         $courseCode = ['mern-stack-front-to-back-full-stack-react-redux-node-js', 'build-a-blockchain-and-a-cryptocurrency-from-scratch', 'symfony-course-from-absolute-zero', 'java-programming-masterclass-for-software-developers'];
-        $courseType = [self::RENT_COURSE, self::BUY_COURSE, self::FREE_COURSE, self::BUY_COURSE];
+        $courseType = [self::RENT_COURSE, self::RENT_COURSE, self::BUY_COURSE, self::FREE_COURSE];
         $coursePrice = [25.55, 20.25, 5000, 0.0];
 
         $transactionForCourse = ['mern-stack-front-to-back-full-stack-react-redux-node-js', 'build-a-blockchain-and-a-cryptocurrency-from-scratch', 'symfony-course-from-absolute-zero'];
@@ -82,11 +82,24 @@ class BillingUserFixtures extends Fixture
             $course = $manager->getRepository(Course::class)->find($courses[$i]->getId());
             $transaction = new Transaction();
             $transaction->setCreatedAt((new \DateTime()));
-            $transaction->setUserId($transactionSender[$i]);
+            $transaction->setUserId($transactionSender[0]);
             $transaction->setCourse($course);
             $transaction->setType($transactionType[$i]);
             $transaction->setValue($transactionValue[$i]);
             $transaction->setExpireAt($transactionExpireAt[$i]);
+            $manager->persist($transaction);
+        }
+        $manager->flush();
+
+        for ($i = 0; $i < 2; $i++) {
+            $course = $manager->getRepository(Course::class)->find($courses[$i]->getId());
+            $transaction = new Transaction();
+            $transaction->setCreatedAt((new \DateTime()));
+            $transaction->setUserId($transactionSender[2]);
+            $transaction->setCourse($course);
+            $transaction->setType($transactionType[0]);
+            $transaction->setValue($transactionValue[0]);
+            $transaction->setExpireAt((new \DateTime())->modify('+5 hours'));
             $manager->persist($transaction);
         }
 

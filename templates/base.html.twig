@@ -13,38 +13,33 @@
                 </tr>
                 <tr>
                     <td>
-                        <table cellpadding='0' cellspacing='0' style='background: #ffffff; padding: 20px; text-align: left; width: 100%'>
-                            <tr>
-                                <td style='font: 18px/24px arial; color: #1a1a1a;'>
-                                    <b>
-                                        {% block title %}{% endblock %}
-                                    </b>
-                                </td>
-                            </tr>
-                        </table>
-                        <table cellpadding='0' cellspacing='0' style='background: #ffffff; width: 100%; font: 14px/20px arial; color: #1a1a1a; border-top: solid 1px #e6e6e6; padding: 20px; text-align: left;'>
-                            <tr>
-                                <td>
-                                    <div style="font: 15px/22px arial; color: #1a1a1a; padding: 0px 0px 10px; margin: 0px;"> {% block body %}{% endblock %}
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
+                        <b>
+                            {% block title %}{% endblock %}
+                            <br/>
+                        </br>
+                        <div style="font: 15px/22px arial; color: #1a1a1a; padding: 0px 0px 10px; margin: 0px;"> {% block body %}{% endblock %}
+                            </div>
                         </td>
                     </tr>
                     <tr>
+                        <br/>
                         <td height="75" valign="top">
-                            <table cellpadding='0' cellspacing='0' height='55' style='font: 12px/20px arial; border-top: solid 1px #cccccc; padding: 15px; 20px 0px; text-align: left;' width='100%'>
-                                <tr>
-                                    <td style="vertical-align: top; width: 200px;">
-                                        <p style="margin:0; font: 12px/20px arial; color:#808080; padding-bottom:10px;">C уважением,<br>
-                                            команда studyOn</p>
-                                    </td>
-                                </tr>
-                            </table>
+                            <p style="margin:0; font: 12px/20px arial; color:#808080; padding-bottom:10px;">C уважением,<br>
+                                команда studyOn</p>
                         </td>
                     </tr>
                 </table>
             </center>
         </body>
     </html>
+    <style>
+        table {
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+    </style>

@@ -151,42 +151,26 @@ class Course
         return $this;
     }
 
-    public static function fromDto($course, $userDto)
+    public static function fromDto($course, $courseDto)
     {
-        if (isset($course)) {
-            $course->setCode($userDto->code);
-            $course->setTitle($userDto->title);
-            switch ($userDto->type) {
-                case 'rent':
-                    $userDto->type = 0;
-                    break;
-                case 'buy':
-                    $userDto->type = 1;
-                    break;
-                case 'free':
-                    $userDto->type = 2;
-                    break;
-            }
-            $course->setType($userDto->type);
-            $course->setPrice($userDto->price);
-        } else {
+        if (!isset($course)) {
             $course = new Course();
-            $course->setCode($userDto->code);
-            $course->setTitle($userDto->title);
-            switch ($userDto->type) {
+        }
+        $course->setCode($courseDto->code);
+        $course->setTitle($courseDto->title);
+        switch ($courseDto->type) {
                 case 'rent':
-                    $userDto->type = 0;
+                    $courseDto->type = self::RENT_COURSE;
                     break;
                 case 'buy':
-                    $userDto->type = 1;
+                    $courseDto->type = self::BUY_COURSE;
                     break;
                 case 'free':
-                    $userDto->type = 2;
+                    $courseDto->type = self::FREE_COURSE;
                     break;
             }
-            $course->setType($userDto->type);
-            $course->setPrice($userDto->price);
-        }
+        $course->setType($courseDto->type);
+        $course->setPrice($courseDto->price);
         return $course;
     }
 }

@@ -19,32 +19,15 @@ class BillingUserRepository extends ServiceEntityRepository
         parent::__construct($registry, BillingUser::class);
     }
 
-    // /**
-    //  * @return BillingUser[] Returns an array of BillingUser objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    public function convertIdToEmail($ids)
     {
-        return $this->createQueryBuilder('b')
-            ->andWhere('b.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('b.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
+        $emails = array();
 
-    /*
-    public function findOneBySomeField($value): ?BillingUser
-    {
-        return $this->createQueryBuilder('b')
-            ->andWhere('b.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
+        foreach ($ids as $id) {
+            $email = $this->findOneBy(['id' => $id])->getEmail();
+            array_push($emails, $email);
+        }
+
+        return $emails;
     }
-    */
 }
