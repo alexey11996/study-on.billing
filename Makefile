@@ -26,3 +26,6 @@ require:
 
 phpunit:
 	@${PHP} bin/phpunit
+
+endrent:
+	@${CONSOLE} payment:ending:notification

@@ -25,7 +25,7 @@ class CourseTest extends AbstractTest
     {
         $client = static::createClient();
         $client->request('POST', '/api/v1/courses', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$this->auth($client, 'simpleUser@gmail.com', 'passwordForSimpleUser')], json_encode(['code' => 'new-course', 'title' => 'New Course', 'type' => 'rent', 'price' => '100.5']));
-        $this->assertContains('Access denied', $client->getResponse()->getContent());
+        $this->assertContains('Access Denied by controller annotation @IsGranted(\"ROLE_SUPER_ADMIN\")', $client->getResponse()->getContent());
         $client->request('POST', '/api/v1/courses', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$this->auth($client, 'alex@mail.ru', '123456')], json_encode(['code' => 'new-course', 'title' => 'New Course', 'type' => 'rent', 'price' => '100.5']));
         $this->assertContains('{"success":true}', $client->getResponse()->getContent());
         $client->request('GET', '/api/v1/courses');
@@ -37,7 +37,7 @@ class CourseTest extends AbstractTest
     {
         $client = static::createClient();
         $client->request('POST', '/api/v1/courses/mern-stack-front-to-back-full-stack-react-redux-node-js', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$this->auth($client, 'simpleUser@gmail.com', 'passwordForSimpleUser')], json_encode(['code' => 'new-course', 'title' => 'New Course', 'type' => 'rent', 'price' => '100.5']));
-        $this->assertContains('Access denied', $client->getResponse()->getContent());
+        $this->assertContains('Access Denied by controller annotation @IsGranted(\"ROLE_SUPER_ADMIN\")', $client->getResponse()->getContent());
         $client->request('POST', '/api/v1/courses/mern-stack-front-to-back-full-stack-react-redux-node-js', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$this->auth($client, 'alex@mail.ru', '123456')], json_encode(['code' => 'mern-stack-front-to-back', 'title' => 'New Title For Mern Stack Course', 'type' => 'rent', 'price' => '100.5']));
         $this->assertContains('{"success":true}', $client->getResponse()->getContent());
         $client->request('GET', '/api/v1/courses');
@@ -49,7 +49,7 @@ class CourseTest extends AbstractTest
     {
         $client = static::createClient();
         $client->request('POST', '/api/v1/courses/java-programming-masterclass-for-software-developers', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$this->auth($client, 'simpleUser@gmail.com', 'passwordForSimpleUser')], json_encode(['code' => 'new-course', 'title' => 'New Course', 'type' => 'rent', 'price' => '100.5']));
-        $this->assertContains('Access denied', $client->getResponse()->getContent());
+        $this->assertContains('Access Denied by controller annotation @IsGranted(\"ROLE_SUPER_ADMIN\")', $client->getResponse()->getContent());
         $client->request('DELETE', '/api/v1/courses/java-programming-masterclass-for-software-developers', [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$this->auth($client, 'alex@mail.ru', '123456')]);
         $this->assertContains('{"success":true}', $client->getResponse()->getContent());
         $client->request('GET', '/api/v1/courses');

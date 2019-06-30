@@ -7,6 +7,7 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Gesdinet\JWTRefreshTokenBundle\Model\RefreshTokenManagerInterface;
 use Gesdinet\JWTRefreshTokenBundle\Service\RefreshToken;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -329,7 +330,7 @@ class BillingController extends AbstractController
     }
 
     /**
-     * @Route("api/v1/courses", name="courses", methods={"GET", "POST"})
+     * @Route("api/v1/courses", name="courses", methods={"GET"})
      * @SWG\Get(
      *    path="/api/v1/courses",
      *    summary="Get courses",
@@ -353,8 +354,26 @@ class BillingController extends AbstractController
      *             )
      *          )
      *    )
-     * ),
-     * @SWG\Post(
+     * )
+     */
+    public function courses(Request $request, ValidatorInterface $validator)
+    {
+        $serializer = SerializerBuilder::create()->build();
+
+        $response = new Response();
+
+        $courses = $this->getDoctrine()->getRepository(Course::class)->findAllCourses();
+
+        $response->setContent($serializer->serialize($courses, 'json'));
+        $response->setStatusCode(Response::HTTP_OK);
+
+        return $response;
+    }
+
+    /**
+    * @Route("api/v1/courses", name="course_add", methods={"POST"})
+    * @IsGranted("ROLE_SUPER_ADMIN")
+    * @SWG\Post(
     *     path="/api/v1/courses",
     *     summary="Create new course",
     *     tags={"Create course"},
@@ -438,53 +457,42 @@ class BillingController extends AbstractController
     * )
     * @Security(name="Bearer")
     */
-    public function courses(Request $request, ValidatorInterface $validator)
+    public function addCourse(Request $request, ValidatorInterface $validator)
     {
         $serializer = SerializerBuilder::create()->build();
         $response = new Response();
 
-        if ($request->isMethod('GET')) {
-            $courses = $this->getDoctrine()->getRepository(Course::class)->findAllCourses();
+        $serializer = SerializerBuilder::create()->build();
+        $courseDto = $serializer->deserialize($request->getContent(), CourseFormModel::class, 'json');
 
-            $response->setContent($serializer->serialize($courses, 'json'));
-            $response->setStatusCode(Response::HTTP_OK);
-        } elseif ($request->isMethod('POST')) {
-            if (in_array('ROLE_SUPER_ADMIN', $this->getUser()->getRoles())) {
-                $serializer = SerializerBuilder::create()->build();
-                $courseDto = $serializer->deserialize($request->getContent(), CourseFormModel::class, 'json');
+        $errors = $validator->validate($courseDto);
 
-                $errors = $validator->validate($courseDto);
-
-                if (count($errors) > 0) {
-                    $jsonErrors = [];
-                    foreach ($errors as $error) {
-                        array_push($jsonErrors, $error->getMessage());
-                    }
-
-                    $response->setContent(json_encode(['code' => 400, 'message' => $jsonErrors]));
-                    $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-                } elseif ($this->getDoctrine()->getRepository(Course::class)->findBy(['code' => $courseDto->code])) {
-                    $response->setContent(json_encode(['code' => 400, 'message' => 'Course code must be unique']));
-                    $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-                } else {
-                    $course = Course::fromDto(null, $courseDto);
-    
-                    $entityManager = $this->getDoctrine()->getManager();
-                    $entityManager->persist($course);
-                    $entityManager->flush();
-        
-                    $response->setContent(json_encode(['success' => true]));
-                    $response->setStatusCode(Response::HTTP_CREATED);
-                }
-            } else {
-                throw new HttpException(403, 'Access denied');
+        if (count($errors) > 0) {
+            $jsonErrors = [];
+            foreach ($errors as $error) {
+                array_push($jsonErrors, $error->getMessage());
             }
+
+            $response->setContent(json_encode(['code' => 400, 'message' => $jsonErrors]));
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } elseif ($this->getDoctrine()->getRepository(Course::class)->findBy(['code' => $courseDto->code])) {
+            $response->setContent(json_encode(['code' => 400, 'message' => 'Course code must be unique']));
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } else {
+            $course = Course::fromDto(null, $courseDto);
+
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->persist($course);
+            $entityManager->flush();
+    
+            $response->setContent(json_encode(['success' => true]));
+            $response->setStatusCode(Response::HTTP_CREATED);
         }
         return $response;
     }
 
     /**
-     * @Route("api/v1/courses/{code}", name="course", methods={"GET", "POST", "DELETE"})
+     * @Route("api/v1/courses/{code}", name="course", methods={"GET"})
      * @SWG\Get(
      *    path="/api/v1/courses/{code}",
      *    summary="Get course",
@@ -508,38 +516,25 @@ class BillingController extends AbstractController
      *             )
      *          )
      *       )
-     * ),
-     * @SWG\Delete(
-     *    path="/api/v1/courses/{code}",
-     *    summary="Delete course",
-     *    tags={"Delete course"},
-     *    produces={"application/json"},
-     *    @SWG\Response(
-     *        response=200,
-     *        description="Successful delete course",
-     *        @SWG\Schema(
-     *             @SWG\Property(
-     *                 property="success",
-     *                 type="boolean"
-     *             )
-     *          )
-     *     ),
-     *    @SWG\Response(
-     *          response=400,
-     *          description="Bad request",
-     *          @SWG\Schema(
-     *              @SWG\Property(
-     *                  property="code",
-     *                  type="integer"
-     *              ),
-     *              @SWG\Property(
-     *                  property="message",
-     *                  type="string"
-     *              )
-     *          )
-     *     ),
-     * ),
-     * @SWG\Post(
+     * )
+     */
+    public function course($code)
+    {
+        $serializer = SerializerBuilder::create()->build();
+        $response = new Response();
+        
+        $course = $this->getDoctrine()->getRepository(Course::class)->findCourseByCode($code);
+            
+        $response->setContent($serializer->serialize($course, 'json'));
+        $response->setStatusCode(Response::HTTP_OK);
+
+        return $response;
+    }
+
+    /**
+    * @Route("api/v1/courses/{code}", name="course_update", methods={"POST"})
+    * @IsGranted("ROLE_SUPER_ADMIN")
+    * @SWG\Post(
     *     path="/api/v1/courses/{code}",
     *     summary="Update course",
     *     tags={"Update course"},
@@ -622,73 +617,100 @@ class BillingController extends AbstractController
     *     )
     * )
     * @Security(name="Bearer")
-     */
-    public function course($code, Request $request, ValidatorInterface $validator)
+    */
+    public function updateCourse($code, Request $request, ValidatorInterface $validator)
     {
         $serializer = SerializerBuilder::create()->build();
         $response = new Response();
-        
-        if ($request->isMethod('GET')) {
-            $course = $this->getDoctrine()->getRepository(Course::class)->findCourseByCode($code);
-            
-            $response->setContent($serializer->serialize($course, 'json'));
-            $response->setStatusCode(Response::HTTP_OK);
-        } elseif ($request->isMethod('POST')) {
-            if (in_array('ROLE_SUPER_ADMIN', $this->getUser()->getRoles())) {
-                $serializer = SerializerBuilder::create()->build();
-                $courseDto = $serializer->deserialize($request->getContent(), CourseFormModel::class, 'json');
-                $errors = $validator->validate($courseDto);
-                if (count($errors) > 0) {
-                    $jsonErrors = [];
-                    foreach ($errors as $error) {
-                        array_push($jsonErrors, $error->getMessage());
-                    }
-                    $response->setContent(json_encode(['code' => 400, 'message' => $jsonErrors]));
-                    $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-                } elseif (($code == $courseDto->code) || (($code != $courseDto->code) && (!$this->getDoctrine()->getRepository(Course::class)->findBy(['code' => $courseDto->code])))) {
-                    $foundCourse = $this->getDoctrine()->getRepository(Course::class)->findOneBy(['code' => $code]);
-                    if ($foundCourse) {
-                        $course = Course::fromDto($foundCourse, $courseDto);
-        
-                        $entityManager = $this->getDoctrine()->getManager();
-                        $entityManager->persist($course);
-                        $entityManager->flush();
-            
-                        $response->setContent(json_encode(['success' => true]));
-                        $response->setStatusCode(Response::HTTP_OK);
-                    } else {
-                        $response->setContent(json_encode(['code' => 404, 'message' => 'Course not found']));
-                        $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-                    }
-                } else {
-                    $response->setContent(json_encode(['code' => 400, 'message' => 'Course code must be unique']));
-                    $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-                }
-            } else {
-                throw new HttpException(403, 'Access denied');
-            }
-        } elseif ($request->isMethod('DELETE')) {
-            if (in_array('ROLE_SUPER_ADMIN', $this->getUser()->getRoles())) {
-                $course = $this->getDoctrine()->getRepository(Course::class)->findOneBy(['code' => $code]);
-                if (!$course) {
-                    $response->setContent(json_encode(['code' => 400, 'message' => 'Course not found']));
-                    $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-                } elseif ($this->getDoctrine()->getRepository(Transaction::class)->findOneBy(['course' => $course])) {
-                    $response->setContent(json_encode(['code' => 400, 'message' => 'This course exists in some transactions']));
-                    $response->setStatusCode(Response::HTTP_BAD_REQUEST);
-                } else {
-                    $entityManager = $this->getDoctrine()->getManager();
-                    $entityManager->remove($course);
-                    $entityManager->flush();
 
-                    $response->setContent(json_encode(['success' => true]));
-                    $response->setStatusCode(Response::HTTP_OK);
-                }
-            } else {
-                throw new HttpException(403, 'Access denied');
+        $courseDto = $serializer->deserialize($request->getContent(), CourseFormModel::class, 'json');
+
+        $errors = $validator->validate($courseDto);
+        if (count($errors) > 0) {
+            $jsonErrors = [];
+            foreach ($errors as $error) {
+                array_push($jsonErrors, $error->getMessage());
             }
+            $response->setContent(json_encode(['code' => 400, 'message' => $jsonErrors]));
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } elseif (($code == $courseDto->code) || (($code != $courseDto->code) && (!$this->getDoctrine()->getRepository(Course::class)->findBy(['code' => $courseDto->code])))) {
+            $foundCourse = $this->getDoctrine()->getRepository(Course::class)->findOneBy(['code' => $code]);
+            if ($foundCourse) {
+                $course = Course::fromDto($foundCourse, $courseDto);
+    
+                $entityManager = $this->getDoctrine()->getManager();
+                $entityManager->persist($course);
+                $entityManager->flush();
+        
+                $response->setContent(json_encode(['success' => true]));
+                $response->setStatusCode(Response::HTTP_OK);
+            } else {
+                $response->setContent(json_encode(['code' => 404, 'message' => 'Course not found']));
+                $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+            }
+        } else {
+            $response->setContent(json_encode(['code' => 400, 'message' => 'Course code must be unique']));
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
         }
+        return $response;
+    }
 
+    /**
+     * @Route("api/v1/courses/{code}", name="course_delete", methods={"DELETE"})
+     * @IsGranted("ROLE_SUPER_ADMIN")
+     * @SWG\Delete(
+     *    path="/api/v1/courses/{code}",
+     *    summary="Delete course",
+     *    tags={"Delete course"},
+     *    produces={"application/json"},
+     *    @SWG\Response(
+     *        response=200,
+     *        description="Successful delete course",
+     *        @SWG\Schema(
+     *             @SWG\Property(
+     *                 property="success",
+     *                 type="boolean"
+     *             )
+     *          )
+     *     ),
+     *    @SWG\Response(
+     *          response=400,
+     *          description="Bad request",
+     *          @SWG\Schema(
+     *              @SWG\Property(
+     *                  property="code",
+     *                  type="integer"
+     *              ),
+     *              @SWG\Property(
+     *                  property="message",
+     *                  type="string"
+     *              )
+     *          )
+     *     ),
+     * )
+     * @Security(name="Bearer")
+     */
+    public function deleteCourse($code, Request $request, ValidatorInterface $validator)
+    {
+        $serializer = SerializerBuilder::create()->build();
+        $response = new Response();
+
+        $course = $this->getDoctrine()->getRepository(Course::class)->findOneBy(['code' => $code]);
+
+        if (!$course) {
+            $response->setContent(json_encode(['code' => 400, 'message' => 'Course not found']));
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } elseif ($this->getDoctrine()->getRepository(Transaction::class)->findOneBy(['course' => $course])) {
+            $response->setContent(json_encode(['code' => 400, 'message' => 'This course exists in some transactions']));
+            $response->setStatusCode(Response::HTTP_BAD_REQUEST);
+        } else {
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->remove($course);
+            $entityManager->flush();
+
+            $response->setContent(json_encode(['success' => true]));
+            $response->setStatusCode(Response::HTTP_OK);
+        }
         return $response;
     }
 

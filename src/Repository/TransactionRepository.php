@@ -35,7 +35,7 @@ class TransactionRepository extends ServiceEntityRepository
         $endDate = date("Y-m-d", time());
 
         $courses = $this->createQueryBuilder('t')
-            ->select('c.title', 'c.type', 'COUNT(c.title) as countBuyAndRent', 'SUM(c.price) as TotalPrice')
+            ->select('c.title', 'c.type', 'COUNT(c.title) as countBuyAndRent', 'SUM(t.value) as TotalPrice')
             ->innerJoin('t.course', 'c')
             ->andWhere(" t.expireAt BETWEEN :startDate AND :endDate")
             ->setParameter('startDate', $startDate)

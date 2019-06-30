@@ -29,11 +29,7 @@ class EndRentNotification extends ContainerAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        //while (true) {
-        //    sleep(5);
         $this->sendEmails();
-        //    $output->writeln('Whoa!');
-        //}
     }
 
     private function sendEmails()
