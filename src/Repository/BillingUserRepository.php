@@ -21,12 +21,12 @@ class BillingUserRepository extends ServiceEntityRepository
 
     public function convertIdToEmail($ids)
     {
-        $emails = array();
-
-        foreach ($ids as $id) {
-            $email = $this->findOneBy(['id' => $id])->getEmail();
-            array_push($emails, $email);
-        }
+        $emails = $this->createQueryBuilder('u')
+            ->select('u.email')
+            ->where('u.id IN (:ids)')
+            ->setParameter("ids", $ids)
+            ->getQuery()
+            ->getResult();
 
         return $emails;
     }

@@ -43,26 +43,20 @@ class EndRentNotification extends ContainerAwareCommand
 
             $emails = $this->entityManager->getRepository(BillingUser::class)->convertIdToEmail($uniqueIds);
 
-            for ($i = 0; $i < count($uniqueIds); $i++) {
-                $combined = [];
-                foreach ($transactions as $transaction) {
-                    if ($transaction['userId'] == $uniqueIds[$i]) {
-                        $tempArr['title'] = $transaction['title'];
-                        $tempArr['expireAt'] = $transaction['expireAt'];
-                        array_push($combined, $tempArr);
-                    }
-                }
-                array_push($finalTransactions, $combined);
+            foreach ($transactions as $transaction) {
+                $finalTransactions[$transaction['userId']][] = $transaction;
             }
+
+            print_r($finalTransactions);
 
             for ($i = 0; $i < count($finalTransactions); $i++) {
                 $html = $this->twig->render(
                     'endRent.html.twig',
-                    ['courses' => $finalTransactions[$i]]
+                    ['courses' => $finalTransactions[$uniqueIds[$i]]]
                 );
                 $message = (new \Swift_Message('Срок аренды курсов подходит к концу'))
                     ->setFrom($this->sendFrom)
-                    ->setTo($emails[$i])
+                    ->setTo($emails[$i]['email'])
                     ->setBody($html, 'text/html');
 
                 $this->mailer->send($message);
