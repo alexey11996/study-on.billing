@@ -47,8 +47,6 @@ class EndRentNotification extends ContainerAwareCommand
                 $finalTransactions[$transaction['userId']][] = $transaction;
             }
 
-            print_r($finalTransactions);
-
             for ($i = 0; $i < count($finalTransactions); $i++) {
                 $html = $this->twig->render(
                     'endRent.html.twig',
