@@ -4,12 +4,12 @@ namespace App\Command;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use App\Entity\Transaction;
 use App\Entity\BillingUser;
 use App\Service\Twig;
 
-class EndRentNotification extends ContainerAwareCommand
+class EndRentNotification extends Command
 {
     private $twig;
     private $mailer;
