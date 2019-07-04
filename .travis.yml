@@ -18,6 +18,7 @@ addons:
 
 before_install:
   - sudo chown -R ${UID:-1000}:${GID:-1000} $PWD
+  - sudo chown -R ${USER} /home/${USER}/.composer
   - sudo /etc/init.d/mysql stop
   - sudo /etc/init.d/postgresql stop
   - docker -v
@@ -31,6 +32,7 @@ install:
   - docker-compose build
   - docker-compose up -d
   - docker-compose ps
+  - sudo chown -R ${USER} /home/${USER}/.composer
   - docker-compose exec php composer install
   - docker-compose exec php bin/console doctrine:database:create --env=test
   - docker-compose exec php bin/console doctrine:migrations:migrate --env=test --no-interaction
